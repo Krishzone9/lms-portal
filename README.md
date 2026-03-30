@@ -138,15 +138,14 @@ Frontend runs on: `http://localhost:5173`
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/lms_portal
 JWT_SECRET=your_super_secret_key
-RAZORPAY_KEY_ID=dummy_key_or_rzp_test_xxxxxxxxxx
-RAZORPAY_KEY_SECRET=dummy_secret_or_real_secret
-BYPASS_RAZORPAY=true
+RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxx
+RAZORPAY_KEY_SECRET=your_razorpay_test_secret
 ```
 
 ### frontend/.env.example
 ```env
 VITE_API_URL=http://localhost:5000/api
-VITE_RAZORPAY_KEY_ID=dummy_key_or_rzp_test_xxxxxxxxxx
+VITE_RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxx
 ```
 
 ---
@@ -178,9 +177,9 @@ VITE_RAZORPAY_KEY_ID=dummy_key_or_rzp_test_xxxxxxxxxx
 
 ## Notes for Razorpay Test Mode
 
-1. For quick demo mode, keep `BYPASS_RAZORPAY=true` and use dummy keys.
-2. For real test checkout, set `BYPASS_RAZORPAY=false` and add actual Razorpay test key/secret.
-3. Use Razorpay test cards/UPI in checkout popup when bypass is disabled.
+1. Create Razorpay account and get **test key id/secret**.
+2. Add keys in backend `.env` and key id in frontend `.env`.
+3. Use Razorpay test cards/UPI in checkout popup.
 
 ---
 

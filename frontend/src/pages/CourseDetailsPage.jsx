@@ -37,15 +37,6 @@ const CourseDetailsPage = () => {
     fetchCourse();
   }, [id]);
 
-  const completeMockPayment = async (courseId, orderId = 'mock_order') => {
-    await api.post('/enrollments/verify-payment', {
-      razorpay_order_id: orderId,
-      razorpay_payment_id: `mock_payment_${Date.now()}`,
-      razorpay_signature: 'mock_signature',
-      courseId
-    });
-  };
-
   const handleEnroll = async () => {
     if (!user) {
       toast.error('Please login first');
@@ -62,23 +53,16 @@ const CourseDetailsPage = () => {
         return;
       }
 
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        toast.error('Failed to load Razorpay script');
+        return;
+      }
+
       const { data } = await api.post('/enrollments/create-order', { courseId: course._id });
 
-      if (data.bypassPayment) {
-        await completeMockPayment(course._id, data.order.id);
-        toast.success('Enrolled with mock payment mode');
-        return;
-      }
-
-      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
-      const loaded = await loadRazorpayScript();
-      if (!loaded || !razorpayKey || razorpayKey.includes('dummy')) {
-        toast.error('Razorpay key/script missing. Enable BYPASS_RAZORPAY=true in backend for testing.');
-        return;
-      }
-
       const options = {
-        key: razorpayKey,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: data.order.amount,
         currency: data.order.currency,
         name: 'LMS Portal',

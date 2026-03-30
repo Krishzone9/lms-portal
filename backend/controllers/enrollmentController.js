@@ -4,15 +4,10 @@ const Enrollment = require('../models/Enrollment');
 const Course = require('../models/Course');
 const User = require('../models/User');
 
-const shouldBypassPayment = () => process.env.BYPASS_RAZORPAY === 'true';
-
-let razorpay = null;
-if (!shouldBypassPayment() && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
-  razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-  });
-}
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
+});
 
 const enrollFreeCourse = async (req, res) => {
   try {
@@ -52,24 +47,6 @@ const createPaymentOrder = async (req, res) => {
 
     const amount = Math.round(course.price * 100);
 
-    if (shouldBypassPayment()) {
-      return res.status(200).json({
-        order: {
-          id: `mock_order_${Date.now()}`,
-          amount,
-          currency: 'INR'
-        },
-        course,
-        bypassPayment: true
-      });
-    }
-
-    if (!razorpay) {
-      return res.status(500).json({
-        message: 'Razorpay is not configured. Add keys or enable BYPASS_RAZORPAY=true'
-      });
-    }
-
     const options = {
       amount,
       currency: 'INR',
@@ -77,7 +54,7 @@ const createPaymentOrder = async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
-    return res.status(200).json({ order, course, bypassPayment: false });
+    return res.status(200).json({ order, course });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to create payment order', error: error.message });
   }
@@ -92,15 +69,13 @@ const verifyPaymentAndEnroll = async (req, res) => {
       courseId
     } = req.body;
 
-    if (!shouldBypassPayment()) {
-      const generatedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-        .digest('hex');
+    const generatedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
 
-      if (generatedSignature !== razorpay_signature) {
-        return res.status(400).json({ message: 'Invalid payment signature' });
-      }
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).json({ message: 'Invalid payment signature' });
     }
 
     const enrollment = await Enrollment.findOneAndUpdate(
